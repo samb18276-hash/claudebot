@@ -5,6 +5,7 @@ import discord
 from discord.ext import commands
 from groq import Groq
 from dotenv import load_dotenv
+from pymongo import MongoClient
 
 load_dotenv()
 
@@ -19,8 +20,14 @@ intents.members = True
 
 bot = commands.Bot(command_prefix="!c", intents=intents)
 
-MEMORY_FILE = os.path.join(os.getenv("MEMORY_DIR", os.path.dirname(os.path.abspath(__file__))), "claude_memory.json")
 MAX_HISTORY = 40
+
+MONGO_URI = os.getenv("MONGO_URI")
+if MONGO_URI:
+    _mongo = MongoClient(MONGO_URI)
+    _col = _mongo["claudebot"]["memory"]
+else:
+    _col = None
 
 SYSTEM_PROMPT = """You are Claude Code, a sharp and helpful AI assistant. You specialize in:
 - Side hustles and passive income ideas
@@ -54,20 +61,25 @@ Important context:
 - You are Claude Code's Discord presence"""
 
 def load_memory():
-    if os.path.exists(MEMORY_FILE):
+    if _col is not None:
         try:
-            with open(MEMORY_FILE, "r") as f:
-                return {int(k): v for k, v in json.load(f).items()}
+            doc = _col.find_one({"_id": "histories"})
+            if doc:
+                return {int(k): v for k, v in doc["data"].items()}
         except Exception:
             pass
     return {}
 
 def save_memory(histories):
-    try:
-        with open(MEMORY_FILE, "w") as f:
-            json.dump(histories, f)
-    except Exception:
-        pass
+    if _col is not None:
+        try:
+            _col.update_one(
+                {"_id": "histories"},
+                {"$set": {"data": {str(k): v for k, v in histories.items()}}},
+                upsert=True
+            )
+        except Exception:
+            pass
 
 conversation_histories = load_memory()
 
