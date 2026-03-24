@@ -1,4 +1,5 @@
 import os
+import re
 import json
 import asyncio
 import discord
@@ -91,9 +92,17 @@ async def on_ready():
 
 @bot.event
 async def on_message(message):
-    # Never respond to bots (prevents loops with sb4)
-    if message.author.bot:
+    if message.author == bot.user:
         return
+
+    # Allow other bots only when they mention claudebot, with depth limit
+    if message.author.bot:
+        if bot.user not in message.mentions:
+            return
+        depth_match = re.search(r'\[d:(\d+)\]', message.content)
+        depth = int(depth_match.group(1)) if depth_match else 0
+        if depth >= 3:
+            return
 
     # Handle commands first
     if message.content.startswith("!c"):
@@ -110,6 +119,7 @@ async def on_message(message):
     content = message.content
     if is_mentioned:
         content = content.replace(f"<@{bot.user.id}>", "").strip()
+    content = re.sub(r'\[d:\d+\]', '', content).strip()
 
     if not content:
         await message.reply("Yeah?")
@@ -135,6 +145,12 @@ async def on_message(message):
             reply = response.choices[0].message.content
             conversation_histories[user_id].append({"role": "assistant", "content": reply})
             save_memory(conversation_histories)
+
+            # Add depth tag when replying to a bot
+            if message.author.bot:
+                depth_match = re.search(r'\[d:(\d+)\]', message.content)
+                depth = int(depth_match.group(1)) if depth_match else 0
+                reply = f"[d:{depth+1}] {reply}"
 
             if len(reply) > 2000:
                 for i in range(0, len(reply), 2000):
