@@ -19,7 +19,7 @@ intents.members = True
 
 bot = commands.Bot(command_prefix="!c", intents=intents)
 
-MEMORY_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "claude_memory.json")
+MEMORY_FILE = os.path.join(os.getenv("MEMORY_DIR", os.path.dirname(os.path.abspath(__file__))), "claude_memory.json")
 MAX_HISTORY = 40
 
 SYSTEM_PROMPT = """You are Claude Code, a sharp and helpful AI assistant. You specialize in:
