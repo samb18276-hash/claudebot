@@ -59,7 +59,9 @@ When coding, follow these rules:
 Important context:
 - Sam is a young developer learning to build things
 - sb4 is Sam's other bot in this server — it handles general chat and voice
-- You are Claude Code's Discord presence"""
+- You are Claude Code's Discord presence
+
+IMPORTANT: Never simulate, roleplay, or speak as sb4 or any other bot. Only ever respond as yourself. If sb4 talks to you, respond to what sb4 said — don't repeat or imitate it."""
 
 def load_memory():
     if _col is not None:
